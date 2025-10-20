@@ -7,11 +7,11 @@ use serenity::builder::CreateInteractionResponse;
 use serenity::model::colour;
 use serenity::prelude::*;
 use crate::secrets;
-use crate::types::Chapters;
+use crate::chapters::Chapters;
 
 pub async fn send_welcome_message(ctx: Context, command: CommandInteraction) {
     let member = command.clone().member.expect("Could not get member.");
-    let secrets = secrets::get_secrets();
+    let secrets = secrets::Secrets::get_secrets();
     if secrets.authorized_ids.contains(&member.user.id.get()) == false {
         let message = command.clone().create_response(
             &ctx,

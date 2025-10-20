@@ -1,6 +1,9 @@
 use std::fmt::Debug;
 use std::collections::HashMap;
+use std::sync::RwLock;
 use serde::{Deserialize, Serialize};
+
+static CHAPTERS_CACHE: RwLock<Option<Chapters>> = RwLock::new(None);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chapter {
@@ -8,11 +11,12 @@ pub struct Chapter {
     pub role_id: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct ChaptersConfig {
     chapters: Vec<Chapter>,
 }
 
+#[derive(Clone)]
 pub struct Chapters {
     chapters: Vec<Chapter>,
     by_name: HashMap<String, usize>,
@@ -20,6 +24,14 @@ pub struct Chapters {
 
 impl Chapters {
     pub fn load() -> Self {
+        // Try to read from cache first.
+        if let Ok(cache) = CHAPTERS_CACHE.read() {
+            if let Some(chapters) = cache.as_ref() {
+                return chapters.clone();
+            }
+        }
+        
+        // Cache miss - load from disk.
         let file = std::fs::File::open("chapters.json").expect("chapters.json not found");
         let config: ChaptersConfig = serde_json::from_reader(file).expect("chapters.json not valid");
         
@@ -29,9 +41,51 @@ impl Chapters {
             by_name.insert(chapter.name.clone(), index);
         }
         
-        Self {
+        let chapters = Self {
             chapters: config.chapters,
             by_name,
+        };
+        
+        // Update cache.
+        if let Ok(mut cache) = CHAPTERS_CACHE.write() {
+            *cache = Some(chapters.clone());
+        }
+        
+        chapters
+    }
+
+    pub fn add_chapter(&mut self, chapter: Chapter) {
+        self.chapters.push(chapter);
+        self.sort();
+        self.save();
+    }
+
+    pub fn remove_chapter(&mut self, id: u8) {
+        self.chapters.remove(id as usize);
+        self.save();
+    }
+    
+    pub fn save(&mut self) {
+        let config = ChaptersConfig {
+            chapters: self.chapters.clone(),
+        };
+        
+        let file = std::fs::File::create("chapters.json").expect("Could not create chapters.json");
+        serde_json::to_writer_pretty(file, &config).expect("Could not write to chapters.json");
+        
+        // Update cache with new values.
+        if let Ok(mut cache) = CHAPTERS_CACHE.write() {
+            *cache = Some(self.clone());
+        }
+    }
+
+    fn sort(&mut self) {
+        self.chapters.sort_by(|a, b| a.name.cmp(&b.name));
+
+        // Rebuild by_name map after sorting
+        self.by_name.clear();
+        for (index, chapter) in self.chapters.iter().enumerate() {
+            self.by_name.insert(chapter.name.clone(), index);
         }
     }
 
@@ -52,7 +106,7 @@ impl Chapters {
     }
 
     pub fn to_formatted_list(&self) -> String {
-        let mut result = String::from("Available Chapters:\n\n");
+        let mut result = String::from("Available Chapters:\n\n```");
         let mut num = 1;
         let num_pad = 3;
         
@@ -71,6 +125,7 @@ impl Chapters {
             }
             num += 1;
         }
+        result.push_str("```");
         result
     }
 }

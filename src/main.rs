@@ -1,5 +1,5 @@
 mod nmi_handler;
-mod types;
+mod chapters;
 mod message_command;
 mod secrets;
 
@@ -13,7 +13,7 @@ use serenity::prelude::*;
 use serde_json;
 use serde::{Deserialize, Serialize};
 use crate::message_command::send_welcome_message;
-use crate::types::Chapters;
+use crate::chapters::Chapters;
 
 struct Handler;
 
@@ -24,7 +24,7 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, _ready: Ready) {
         println!("The bot is connected!");
 
-        let secrets = secrets::get_secrets();
+        let secrets = secrets::Secrets::get_secrets();
 
         let guild_id = GuildId::new(secrets.guild_id);
 
@@ -33,19 +33,25 @@ impl EventHandler for Handler {
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Component(command) = interaction.clone() {
-            if command.data.custom_id == "nmi_button" {
-
+        if let Interaction::Component(component) = interaction.clone() {
+            if component.data.custom_id == "nmi_button" {
+                let response = nmi_handler::nmi_modal(&ctx, &component).await;
             }
 
-            if command.data.custom_id == "guest_button" {
+            if component.data.custom_id == "guest_button" {
 
+            }
+        }
+
+        if let Interaction::Modal(modal) = interaction.clone() {
+            if modal.data.custom_id == "nmi_modal" {
+                let response = nmi_handler::nmi_modal_response(&ctx, &modal).await;
             }
         }
 
         if let Interaction::Command(command) = interaction.clone() {
             if command.data.name.as_str() == "create_welcome_message" {
-                send_welcome_message(ctx, command);
+                send_welcome_message(ctx, command).await;
             }
         }
     }
@@ -57,7 +63,7 @@ async fn main() {
     let chapters = Chapters::load();
     println!("{}", chapters.to_formatted_list());
 
-    let secrets = secrets::get_secrets();
+    let secrets = secrets::Secrets::get_secrets();
 
     // Only intents needed for interactions, may be none.
     let intents =
