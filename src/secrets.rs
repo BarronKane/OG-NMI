@@ -8,7 +8,13 @@ pub struct Secrets {
     pub guild_id: u64,
     pub token: String,
 
-    pub authorized_ids: Vec<u64>
+    pub authorized_ids: Vec<u64>,
+
+    pub nmi_channel_id: u64,
+    pub welcome_channel_id: u64,
+    pub new_member_role_id: u64,
+    pub guest_role_id: u64,
+    pub member_role_id: u64
 }
 
 impl Secrets {

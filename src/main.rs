@@ -2,6 +2,8 @@ mod nmi_handler;
 mod chapters;
 mod message_command;
 mod secrets;
+mod emojis;
+mod member_info;
 
 use serenity::all::{Interaction, Member};
 use serenity::async_trait;
@@ -14,6 +16,7 @@ use serde_json;
 use serde::{Deserialize, Serialize};
 use crate::message_command::send_welcome_message;
 use crate::chapters::Chapters;
+use crate::member_info::handle_member_join;
 
 struct Handler;
 
@@ -30,6 +33,10 @@ impl EventHandler for Handler {
 
         let command = message_command::register_welcome_message_command().await;
         guild_id.set_commands(&ctx.http, vec![command]).await.expect("Could not register commands.");
+    }
+    
+    async fn guild_member_addition(&self, ctx: Context, new_member: Member) {
+        handle_member_join(&ctx, &new_member).await;
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
@@ -67,7 +74,7 @@ async fn main() {
 
     // Only intents needed for interactions, may be none.
     let intents =
-        GatewayIntents::empty();
+        GatewayIntents::GUILD_MEMBERS;
 
     let mut client = Client::builder(&secrets.token, intents)
         .event_handler(Handler)

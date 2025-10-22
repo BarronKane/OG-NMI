@@ -8,7 +8,7 @@ static CHAPTERS_CACHE: RwLock<Option<Chapters>> = RwLock::new(None);
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chapter {
     pub name: String,
-    pub role_id: String,
+    pub role_id: u64,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -100,6 +100,10 @@ impl Chapters {
     pub fn get_id_by_name(&self, name: &str) -> Option<u8> {
         self.by_name.get(name).map(|&index| index as u8)
     }
+    
+    pub fn get_count(&self) -> usize {
+        self.chapters.len()
+    }
 
     pub fn all(&self) -> &[Chapter] {
         &self.chapters
@@ -108,7 +112,7 @@ impl Chapters {
     pub fn to_formatted_list(&self) -> String {
         let mut result = String::from("Available Chapters:\n\n```");
         let mut num = 1;
-        let num_pad = 3;
+        let num_pad = 2;
         
         for (id, chapter) in self.chapters.iter().enumerate() {
             let chars = chapter.name.chars().count();
@@ -125,14 +129,14 @@ impl Chapters {
             }
             num += 1;
         }
-        result.push_str("```");
+        result.push_str("\n```");
         result
     }
 }
 
 impl Chapter {
-    pub fn get_role_id(&self) -> &str {
-        &self.role_id
+    pub fn get_role_id(&self) -> u64 {
+        self.role_id.clone()
     }
 }
 

@@ -25,6 +25,13 @@ pub async fn send_welcome_message(ctx: Context, command: CommandInteraction) {
         return;
     }
 
+    command.create_response(
+        &ctx,
+        CreateInteractionResponse::Message(CreateInteractionResponseMessage::new().ephemeral(true).content(
+            "Welcome message sending in progress..",
+        ))
+    ).await.expect("Could not acknowledge command");
+
     let message = create_chapter_message();
     let result = command.channel_id.send_message(ctx.http, message).await;
     match result {
@@ -38,8 +45,8 @@ pub async fn register_welcome_message_command() -> CreateCommand {
 }
 
 fn create_chapter_message() -> CreateMessage {
-    //let chapter_list = Chapters::to_formatted_list();
-    let chapter_list = "Chapters:\n\n".to_string();
+    let chapters = Chapters::load();
+    let chapter_list = chapters.to_formatted_list();
 
     let mut body = chapter_list;
     body += "\n\n";
