@@ -8,25 +8,36 @@ use crate::secrets;
 
 pub async fn handle_member_join(ctx: &client::Context, new_member: &Member) -> Result<(), serenity::Error> {
     let secrets = secrets::Secrets::get_secrets();
-    let guild_id = GuildId::new(secrets.guild_id);
     let channel_id = ctx.http.get_channel(ChannelId::new(secrets.welcome_channel_id)).await?;
 
-    let initial_message = CreateMessage::new().content("Loading...");
-    let message = channel_id.id().send_message(&ctx.http, initial_message).await?;
-
-    let joined_message = create_joined_message(message.id, new_member.clone());
+    let joined_message = create_joined_message(new_member.clone());
+    let message = channel_id.id().send_message(&ctx.http, joined_message).await?;
 
     Ok(())
 }
 
-pub fn create_joined_message(message_id: MessageId, new_member: Member) -> CreateMessage {
+
+
+pub fn create_joined_message(new_member: Member) -> CreateMessage {
     let info_author = CreateEmbedAuthor::new("New Member Joined");
 
     let timestamp: Timestamp = Timestamp::now();
 
-    let footer = CreateEmbedFooter::new(format!("Member ID: {}", interaction.user.id.to_string()));
+    let footer = CreateEmbedFooter::new(format!("Member ID: {}", new_member.user.id));
 
-    CreateMessage::new()
+    let info_embed = CreateEmbed::new()
+        .author(info_author)
+        .field("Member", format!("<@{}>", new_member.user.id), true)
+        .field("Character Name", emoji_warning(), true)
+        .field("Realm", emoji_warning(), true)
+        .field("User Id", new_member.user.id.to_string(), true)
+        .field("Status", format!("{} Awaiting Onboarding", emoji_counterclockwise_arrows()), true)
+        .timestamp(timestamp);
+
+    let message = CreateMessage::new()
+        .embed(info_embed);
+
+    message
 }
 
 pub fn create_new_member_message(interaction: &ModalInteraction, discord_user_id: u64, character_name: String, realm: String) -> CreateMessage {
@@ -44,8 +55,8 @@ pub fn create_new_member_message(interaction: &ModalInteraction, discord_user_id
         .field("Character Name", character_name, true)
         .field("Realm", realm, true)
         .field("User Id", discord_user_id.to_string(), true)
-        .field("Status", format!("{} Awaiting Onboarding", emoji_counterclockwise_arrows()), true)
-        .footer(footer)
+        .field("Status", format!("{} Awaiting Officer Approval", emoji_counterclockwise_arrows()), true)
+        //.footer(footer)
         .timestamp(timestamp);
 
     let button_complete_registration = CreateButton::new("button_complete_registration")
@@ -82,9 +93,9 @@ pub fn create_completed_onboarding_message(interaction: ComponentInteraction) ->
         .field("Member", member_mention, true)
         .field("Character Name", character_name, true)
         .field("Realm", realm, true)
+        .field("User Id", interaction.message.id.to_string(), true)
         .field("Status", format!("{} Onboarding Complete!", emoji_party_popper()), true)
-        .field("Message ID", interaction.message.id.to_string(), true)
-        .footer(footer)
+        //.footer(footer)
         .timestamp(timestamp);
 
     let button_undo_completed = CreateButton::new("button_undo_completed");

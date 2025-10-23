@@ -36,7 +36,7 @@ impl EventHandler for Handler {
     }
     
     async fn guild_member_addition(&self, ctx: Context, new_member: Member) {
-        handle_member_join(&ctx, &new_member).await;
+        let result = handle_member_join(&ctx, &new_member).await;
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
