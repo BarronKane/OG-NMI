@@ -4,6 +4,7 @@ mod message_command;
 mod secrets;
 mod emojis;
 mod member_info;
+mod member_db;
 
 use serenity::all::{Interaction, Member};
 use serenity::async_trait;
@@ -16,14 +17,12 @@ use serde_json;
 use serde::{Deserialize, Serialize};
 use crate::message_command::send_welcome_message;
 use crate::chapters::Chapters;
-use crate::member_info::handle_member_join;
+use crate::member_info::{handle_complete_onboarding, handle_member_join, handle_undo_completion};
 
 struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    // TODO: Landing page, bot modal.
-
     async fn ready(&self, ctx: Context, _ready: Ready) {
         println!("The bot is connected!");
 
@@ -37,22 +36,71 @@ impl EventHandler for Handler {
     
     async fn guild_member_addition(&self, ctx: Context, new_member: Member) {
         let result = handle_member_join(&ctx, &new_member).await;
+        match result {
+            Ok(_) => {
+
+            }
+            Err(e) => {
+                println!("Error handling member join: {}", e);
+            }
+        }
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Component(component) = interaction.clone() {
             if component.data.custom_id == "nmi_button" {
                 let response = nmi_handler::nmi_modal(&ctx, &component).await;
+
+                match response {
+                    Ok(_) => {
+
+                    }
+                    Err(e) => {
+                        println!("Error handling NMI button: {}", e);
+                    }
+                }
             }
 
             if component.data.custom_id == "guest_button" {
+                // TODO
+            }
 
+            if component.data.custom_id == "button_complete_registration" {
+                let response = handle_complete_onboarding(&ctx, component.clone()).await;
+                match response {
+                    Ok(_) => {
+
+                    }
+                    Err(e) => {
+                        println!("Error handling complete onboarding: {}", e);
+                    }
+                }
+            }
+
+            if component.data.custom_id == "button_undo_completed" {
+                let result = handle_undo_completion(&ctx, component).await;
+                match result {
+                    Ok(_) => {
+
+                    }
+                    Err(e) => {
+                        println!("Error handling undo onboarding: {}", e);
+                    }
+                }
             }
         }
 
         if let Interaction::Modal(modal) = interaction.clone() {
             if modal.data.custom_id == "nmi_modal" {
                 let response = nmi_handler::nmi_modal_response(&ctx, &modal).await;
+                match response {
+                    Ok(_) => {
+
+                    }
+                    Err(e) => {
+                        println!("Error handling NMI modal: {}", e);
+                    }
+                }
             }
         }
 

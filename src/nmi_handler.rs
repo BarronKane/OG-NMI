@@ -5,6 +5,7 @@ use serenity::client::Context;
 use serenity::futures::{StreamExt, pin_mut};
 use crate::chapters::Chapters;
 use crate::emojis::{emoji_party_popper, emoji_warning};
+use crate::member_info::{create_new_member_buttons, create_new_member_embeds, push_member_completion_message};
 use crate::secrets;
 
 pub async fn nmi_modal(ctx: &Context, interaction: &ComponentInteraction) -> Result<(), serenity::Error> {
@@ -122,23 +123,10 @@ pub async fn nmi_modal_response(ctx: &Context, interaction: &ModalInteraction) -
     let channel_id = secrets.nmi_channel_id;
     let channel = ctx.http.get_channel(ChannelId::new(channel_id)).await?;
 
-    let messages = channel.id().messages_iter(ctx.http);
-    pin_mut!(messages);
-    while let Some(message_result) = messages.next().await {
-        if let Ok(message) = message_result {
-            if let Some(embed) = message.embeds.first() {
-                if embed.fields.len() >= 5 {
-                    let discord_user_id = embed.fields[3].value.parse::<u64>().unwrap_or(0);
+    let new_msg_embeds = create_new_member_embeds(interaction, member.user.id.to_string().parse::<u64>().expect("Couldn't parse UserId as u64."), character_name.to_string(), realm_name.to_string());
+    let new_msg_buttons = create_new_member_buttons();
 
-                }
-            }
-        }
-    }
-    let message = ctx.http.get_channel(ChannelId::new(secrets.nmi_channel_id))
-        .await?
-        .id()
-        .send_message(&ctx.http, create_info_message(interaction, character_name.to_string(), realm_name.to_string()))
-        .await?;
+    push_member_completion_message(ctx, &member, channel, new_msg_embeds, new_msg_buttons).await?;
 
     Ok(())
 }

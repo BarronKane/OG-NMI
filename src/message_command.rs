@@ -67,8 +67,8 @@ fn create_chapter_message() -> CreateMessage {
 
     let message = builder::CreateMessage::new()
         .embed(embed)
-        .button(nmi_button)
-        .button(guest_button);
+        .button(nmi_button);
+        //button(guest_button);
 
     message
 }
