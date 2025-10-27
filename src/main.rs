@@ -16,7 +16,7 @@ use serenity::prelude::*;
 use serde_json;
 use serde::{Deserialize, Serialize};
 use crate::message_command::send_welcome_message;
-use crate::chapters::Chapters;
+use crate::chapters::{Chapter, Chapters};
 use crate::member_info::{handle_complete_onboarding, handle_member_join, handle_undo_completion};
 
 struct Handler;
@@ -117,6 +117,7 @@ async fn main() {
     // Load chapters from JSON
     let chapters = Chapters::load();
     println!("{}", chapters.to_formatted_list());
+    println!("\n\n Example: {}-{}", chapters.get_by_id(1).unwrap().name, chapters.get_by_id(1).unwrap().get_role_id().to_string());
 
     let secrets = secrets::Secrets::get_secrets();
 

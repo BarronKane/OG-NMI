@@ -56,7 +56,7 @@ impl MemberJoinMessage {
 
         // u64 values need to be stored as TEXT. Internally, INTEGER is i64.
         conn.execute(
-            "CREATE TABLE member_join_messages (\
+            "CREATE TABLE IF NOT EXIST member_join_messages (\
             id INTEGER PRIMARY KEY,\
             discord_user_id TEXT,\
             message_id TEXT,\

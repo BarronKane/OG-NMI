@@ -1,4 +1,5 @@
 /target
 .idea/
 secrets.json
-
+chapters.json
+sqlite.db

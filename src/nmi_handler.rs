@@ -1,5 +1,6 @@
 use std::ffi::CString;
-use serenity::all::{ButtonStyle, ChannelId, CommandInteraction, ComponentInteraction, CreateEmbedAuthor, CreateMessage, InputTextStyle, ModalInteraction};
+use serenity::all::{ButtonStyle, ChannelId, CommandInteraction, ComponentInteraction, CreateEmbedAuthor, CreateMessage, InputTextStyle, ModalInteraction, Role};
+use serenity::all::Unresolved::RoleId;
 use serenity::builder::{CreateActionRow, CreateInputText, CreateInteractionResponse, CreateModal, CreateInteractionResponseMessage, CreateEmbed, CreateButton};
 use serenity::client::Context;
 use serenity::futures::{StreamExt, pin_mut};
@@ -42,6 +43,7 @@ pub async fn nmi_modal(ctx: &Context, interaction: &ComponentInteraction) -> Res
 }
 
 pub async fn nmi_modal_response(ctx: &Context, interaction: &ModalInteraction) -> Result<(), serenity::Error> {
+    interaction.create_response(&ctx.http, CreateInteractionResponse::Message(CreateInteractionResponseMessage::new().content("Please standby...").ephemeral(true))).await?;
     let default_string = String::new();
     let chapter_number = &interaction
         .data
@@ -108,11 +110,19 @@ pub async fn nmi_modal_response(ctx: &Context, interaction: &ModalInteraction) -
     let guild_id = interaction.guild_id.ok_or(serenity::Error::Other("No guild ID found"))?;
     let member = guild_id.member(&ctx.http, interaction.user.id).await?;
 
-    member.remove_role(&ctx.http, secrets.new_member_role_id).await?;
-    member.add_role(&ctx.http, secrets.member_role_id).await?;
+    let new_member_role_id = serenity::model::id::RoleId::new(secrets.new_member_role_id);
+    //let new_member_role = guild_id.role(&ctx.http, new_member_role_id).await?;
 
-    let chapter_role = _chapter.get_by_id(chapter_number as u8).ok_or(serenity::Error::Other("No chapter found"))?.role_id.clone();
-    member.add_role(&ctx.http, chapter_role).await?;
+    let member_role_id = serenity::model::id::RoleId::new(secrets.member_role_id);
+    //let member_role = guild_id.role(&ctx.http, member_role_id).await?;
+
+    let chapter_role_id = serenity::model::id::RoleId::new(_chapter.get_by_id(chapter_number as usize).ok_or(serenity::Error::Other("No chapter found"))?.role_id.clone());
+    //let chapter_role = guild_id.role(&ctx.http, chapter_role_id).await?;
+
+    member.remove_role(&ctx.http, new_member_role_id).await?;
+    member.add_role(&ctx.http, member_role_id).await?;
+
+    member.add_role(&ctx.http, chapter_role_id).await?;
 
     interaction.user.direct_message(&ctx.http, CreateMessage::new()
         // TODO: Embed
